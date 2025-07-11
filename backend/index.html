@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle de Estoque</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-boxes"></i> Sistema de Estoque</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal('productModal')">
+                    <i class="fas fa-plus"></i> Adicionar Produto
+                </button>
+                <button class="btn btn-secondary" onclick="showReports()">
+                    <i class="fas fa-chart-bar"></i> Relatórios
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Cards -->
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Total de Produtos</h3>
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="card-value" id="totalProducts">0</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Valor Total do Estoque</h3>
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="card-value" id="totalValue">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Produtos em Baixa</h3>
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="card-value" id="lowStock">0</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Receita do Mês</h3>
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="card-value" id="monthlyRevenue">R$ 0,00</div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="filters">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Buscar produtos..." onkeyup="filterProducts()">
+            </div>
+            <select id="sortSelect" onchange="sortProducts()">
+                <option value="name">Ordenar por Nome</option>
+                <option value="quantity">Ordenar por Quantidade</option>
+                <option value="price">Ordenar por Preço</option>
+                <option value="category">Ordenar por Categoria</option>
+            </select>
+            <select id="categoryFilter" onchange="filterProducts()">
+                <option value="">Todas as Categorias</option>
+                <option value="Eletrônicos">Eletrônicos</option>
+                <option value="Roupas">Roupas</option>
+                <option value="Casa">Casa</option>
+                <option value="Esportes">Esportes</option>
+            </select>
+        </div>
+
+        <!-- Products Table -->
+        <div class="table-container">
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Quantidade</th>
+                        <th>Preço Unitário</th>
+                        <th>Valor Total</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                    <!-- Products will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section" id="chartsSection" style="display: none;">
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>Movimentação de Estoque</h3>
+                    <canvas id="stockChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Receita por Categoria</h3>
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Adicionar Produto</h2>
+                <span class="close" onclick="closeModal('productModal')">&times;</span>
+            </div>
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="productName">Nome do Produto:</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Categoria:</label>
+                    <select id="productCategory" required>
+                        <option value="">Selecione uma categoria</option>
+                        <option value="Eletrônicos">Eletrônicos</option>
+                        <option value="Roupas">Roupas</option>
+                        <option value="Casa">Casa</option>
+                        <option value="Esportes">Esportes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="productQuantity">Quantidade:</label>
+                    <input type="number" id="productQuantity" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Preço Unitário:</label>
+                    <input type="number" id="productPrice" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="minStock">Estoque Mínimo:</label>
+                    <input type="number" id="minStock" min="0" value="10">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('productModal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Movement Modal -->
+    <div id="movementModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Movimentar Estoque</h2>
+                <span class="close" onclick="closeModal('movementModal')">&times;</span>
+            </div>
+            <form id="movementForm">
+                <div class="form-group">
+                    <label for="movementType">Tipo de Movimentação:</label>
+                    <select id="movementType" required>
+                        <option value="entrada">Entrada</option>
+                        <option value="saida">Saída</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="movementQuantity">Quantidade:</label>
+                    <input type="number" id="movementQuantity" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="movementReason">Motivo:</label>
+                    <input type="text" id="movementReason" placeholder="Ex: Venda, Compra, Ajuste...">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('movementModal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
